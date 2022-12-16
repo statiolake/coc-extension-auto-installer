@@ -1,0 +1,94 @@
+{
+  "name": "@statiolake/coc-extension-manager",
+  "version": "0.1.0",
+  "description": "Manage coc extensions",
+  "author": "statiolake <statiolake@gmail.com>",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "keywords": [
+    "coc.nvim"
+  ],
+  "engines": {
+    "coc": "^0.0.80"
+  },
+  "scripts": {
+    "lint": "eslint src --ext ts",
+    "clean": "rimraf lib",
+    "watch": "node esbuild.js --watch",
+    "build": "node esbuild.js",
+    "prepare": "node esbuild.js"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 78,
+    "semi": true
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
+    "@typescript-eslint/parser": "^5.13.0",
+    "coc.nvim": "^0.0.83-next.9",
+    "esbuild": "^0.14.24",
+    "eslint": "^8.10.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.5.1",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.6.2"
+  },
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "coc-extension-manager",
+      "properties": {
+        "extension-manager.autoCheckGlobalExtensions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check global extensions automatically on startup"
+        },
+        "extension-manager.autoCheckFileTypeExtensions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check file type extensions automatically on file open"
+        },
+        "extension-manager.globalExtensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Global extensions that should be always installed."
+        },
+        "extension-manager.workspaceExtensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional workspace extension you want to install. Use this in workspace settings."
+        },
+        "extension-manager.fileTypeExtensions": {
+          "type": "object",
+          "patternProperties": {
+            ".*": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "default": {},
+          "description": "File type specific extensions."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "coc-extension-manager.Command",
+        "title": "coc-extension-manager command title"
+      }
+    ]
+  }
+}
