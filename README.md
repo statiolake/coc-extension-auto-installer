@@ -1,10 +1,10 @@
-# coc-extension-manager
+# coc-extension-auto-installer
 
 Manage coc extensions.
 
 ## Install
 
-`:CocInstall @statiolake/coc-extension-manager`
+`:CocInstall @statiolake/coc-extension-auto-installer`
 
 ## License
 

@@ -6,16 +6,16 @@ import {
   workspace,
 } from 'coc.nvim';
 
-const channel = window.createOutputChannel('extension-manager');
+const channel = window.createOutputChannel('extension-auto-installer');
 
 export async function activate(context: ExtensionContext): Promise<void> {
   context.subscriptions.push(
     commands.registerCommand(
-      'extension-manager.installGlobalExtensions',
+      'extension-auto-installer.installGlobalExtensions',
       async () => await installGlobalExtensions(getConfiguration(), true)
     ),
     commands.registerCommand(
-      'extension-manager.installFileTypeExtensionsForCurrentBuffer',
+      'extension-auto-installer.installFileTypeExtensionsForCurrentBuffer',
       async () => {
         const fileType = await workspace.nvim.eval('&filetype');
         if (typeof fileType !== 'string') {
@@ -154,7 +154,7 @@ type Configuration = {
 };
 
 function getConfiguration(): Configuration {
-  const config = workspace.getConfiguration('extension-manager');
+  const config = workspace.getConfiguration('extension-auto-installer');
   return {
     globalExtensions: config.get('globalExtensions') || [],
     workspaceExtensions: config.get('workspaceExtensions') || [],

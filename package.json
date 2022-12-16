@@ -1,7 +1,7 @@
 {
-  "name": "@statiolake/coc-extension-manager",
+  "name": "@statiolake/coc-extension-auto-installer",
   "version": "0.1.0",
-  "description": "Manage coc extensions",
+  "description": "Auto-install coc extensions",
   "author": "statiolake <statiolake@gmail.com>",
   "license": "MIT",
   "main": "lib/index.js",
@@ -41,19 +41,19 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "coc-extension-manager",
+      "title": "coc-extension-auto-installer",
       "properties": {
-        "extension-manager.autoCheckGlobalExtensions": {
+        "extension-auto-installer.autoCheckGlobalExtensions": {
           "type": "boolean",
           "default": true,
           "description": "Check global extensions automatically on startup"
         },
-        "extension-manager.autoCheckFileTypeExtensions": {
+        "extension-auto-installer.autoCheckFileTypeExtensions": {
           "type": "boolean",
           "default": true,
           "description": "Check file type extensions automatically on file open"
         },
-        "extension-manager.globalExtensions": {
+        "extension-auto-installer.globalExtensions": {
           "type": "array",
           "items": {
             "type": "string"
@@ -61,7 +61,7 @@
           "default": [],
           "description": "Global extensions that should be always installed."
         },
-        "extension-manager.workspaceExtensions": {
+        "extension-auto-installer.workspaceExtensions": {
           "type": "array",
           "items": {
             "type": "string"
@@ -69,7 +69,7 @@
           "default": [],
           "description": "Additional workspace extension you want to install. Use this in workspace settings."
         },
-        "extension-manager.fileTypeExtensions": {
+        "extension-auto-installer.fileTypeExtensions": {
           "type": "object",
           "patternProperties": {
             ".*": {
@@ -86,8 +86,8 @@
     },
     "commands": [
       {
-        "command": "coc-extension-manager.Command",
-        "title": "coc-extension-manager command title"
+        "command": "coc-extension-auto-installer.Command",
+        "title": "coc-extension-auto-installer command title"
       }
     ]
   }
