@@ -1,6 +1,6 @@
 {
   "name": "@statiolake/coc-extension-auto-installer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Auto-install coc extensions",
   "author": "statiolake <statiolake@gmail.com>",
   "license": "MIT",
