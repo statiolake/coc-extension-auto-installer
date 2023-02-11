@@ -43,6 +43,16 @@
       "type": "object",
       "title": "coc-extension-auto-installer",
       "properties": {
+        "extension-auto-installer.autoRemoveUnusedExtensions": {
+          "type": "string",
+          "enum": [
+            "autoRemove",
+            "confirm",
+            "never"
+          ],
+          "default": "never",
+          "description": "Automatically remove unknown extensions on startup. Default is `false` because workspace extensions will always be removed when you open other workspaces."
+        },
         "extension-auto-installer.autoCheckGlobalExtensions": {
           "type": "string",
           "enum": [

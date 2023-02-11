@@ -21,7 +21,10 @@ export async function activate(context: ExtensionContext): Promise<void> {
         await installLanguageExtensions(getConfiguration(), languageId, true);
       }
     ),
-
+    commands.registerCommand(
+      'extension-auto-installer.removeUnusedExtensions',
+      async () => await removeUnusedExtensions(getConfiguration(), true)
+    ),
     workspace.onDidOpenTextDocument(async (e) => {
       await installLanguageExtensions(
         getConfiguration(),
@@ -38,6 +41,10 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
   if (config.autoCheckGlobalExtensions !== 'never') {
     await installGlobalExtensions(config, false);
+  }
+
+  if (config.autoRemoveUnusedExtensions !== 'never') {
+    await removeUnusedExtensions(config, false);
   }
 }
 
@@ -99,22 +106,16 @@ async function installExtensionsIfNotInstalled(
   wanted: string[],
   autoInstall: boolean
 ): Promise<'success' | 'allInstalled' | 'cancelled' | 'noExtensionSelected'> {
-  const installed: { [K: string]: boolean } = Object.assign(
-    {},
-    ...extensions.all.map((api) => ({ [api.id]: true }))
-  );
-
+  const installed = new Set(getInstalledExtensions());
   let toInstall: string[] = [];
   for (const extension of wanted) {
-    if (!installed[extension]) {
+    if (!installed.has(extension)) {
       toInstall.push(extension);
     }
   }
 
   channel.appendLine(`wanted extensions: [${wanted.join(', ')}]`);
-  channel.appendLine(
-    `installed extensions: [${Object.keys(installed).join(', ')}]`
-  );
+  channel.appendLine(`installed extensions: [${[...installed].join(', ')}]`);
   channel.appendLine(`toInstall extensions: [${toInstall.join(', ')}]`);
 
   // If there is no extensions, nothing to install.
@@ -154,7 +155,63 @@ async function installExtensionsIfNotInstalled(
   return 'success';
 }
 
+async function removeUnusedExtensions(
+  config: Configuration,
+  showMessage: boolean
+): Promise<void> {
+  const installed = getInstalledExtensions().filter(
+    (id) => !(extensions as any).manager.getExtension(id).isLocal
+  );
+  const specified = new Set([
+    ...config.globalExtensions,
+    ...config.workspaceExtensions,
+    ...([] as string[]).concat(...Object.values(config.languageExtensions)),
+  ]);
+
+  let toRemove = installed.filter(
+    (extensionId) => !specified.has(extensionId)
+  );
+  if (toRemove.length === 0) {
+    if (showMessage) {
+      await window.showInformationMessage('No unused extensions found');
+    }
+    return;
+  } else {
+    const autoRemove = config.autoRemoveUnusedExtensions === 'autoRemove';
+    const result = autoRemove
+      ? 'Remove'
+      : await window.showInformationMessage(
+          'There are extensions that are not used anymore. Remove?\n' +
+            `[${toRemove.join(', ')}]`,
+          'Remove',
+          'Select which extensions to remove',
+          'Not now'
+        );
+
+    if (!result || result === 'Not now') return;
+
+    if (result === 'Select which extensions to remove') {
+      toRemove =
+        (await window.showQuickPick(toRemove, {
+          title: 'Select extensions to remove',
+          canPickMany: true,
+        })) || [];
+      if (toRemove.length === 0) {
+        return;
+      }
+    }
+
+    // uninstallExtensions is not in type definitions but exists
+    (extensions as any).manager.uninstallExtensions(toRemove);
+  }
+}
+
+function getInstalledExtensions(): string[] {
+  return extensions.all.map((api) => api.id);
+}
+
 type Configuration = {
+  autoRemoveUnusedExtensions: 'autoRemove' | 'confirm' | 'never';
   autoCheckGlobalExtensions: 'autoInstall' | 'confirm' | 'never';
   autoCheckLanguageExtensions: 'autoInstall' | 'confirm' | 'never';
   globalExtensions: string[];
@@ -165,6 +222,10 @@ type Configuration = {
 function getConfiguration(): Configuration {
   const config = workspace.getConfiguration('extension-auto-installer');
   return {
+    autoRemoveUnusedExtensions: config.get(
+      'autoRemoveUnusedExtensions',
+      'never'
+    ),
     autoCheckGlobalExtensions: config.get(
       'autoCheckGlobalExtensions',
       'confirm'
