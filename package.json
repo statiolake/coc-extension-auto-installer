@@ -1,6 +1,6 @@
 {
   "name": "@statiolake/coc-extension-auto-installer",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "Auto-install coc extensions",
   "author": "statiolake <statiolake@gmail.com>",
   "license": "MIT",
@@ -44,14 +44,24 @@
       "title": "coc-extension-auto-installer",
       "properties": {
         "extension-auto-installer.autoCheckGlobalExtensions": {
-          "type": "boolean",
-          "default": true,
+          "type": "string",
+          "enum": [
+            "autoInstall",
+            "confirm",
+            "never"
+          ],
+          "default": "confirm",
           "description": "Check global extensions automatically on startup"
         },
-        "extension-auto-installer.autoCheckFileTypeExtensions": {
-          "type": "boolean",
-          "default": true,
-          "description": "Check file type extensions automatically on file open"
+        "extension-auto-installer.autoCheckLanguageExtensions": {
+          "type": "string",
+          "enum": [
+            "autoInstall",
+            "confirm",
+            "never"
+          ],
+          "default": "confirm",
+          "description": "Check language extensions automatically on file open"
         },
         "extension-auto-installer.globalExtensions": {
           "type": "array",
@@ -69,7 +79,7 @@
           "default": [],
           "description": "Additional workspace extension you want to install. Use this in workspace settings."
         },
-        "extension-auto-installer.fileTypeExtensions": {
+        "extension-auto-installer.languageExtensions": {
           "type": "object",
           "patternProperties": {
             ".*": {
@@ -80,7 +90,7 @@
             }
           },
           "default": {},
-          "description": "File type specific extensions."
+          "description": "Language specific extensions."
         }
       }
     },

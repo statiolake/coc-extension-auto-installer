@@ -15,24 +15,19 @@ export async function activate(context: ExtensionContext): Promise<void> {
       async () => await installGlobalExtensions(getConfiguration(), true)
     ),
     commands.registerCommand(
-      'extension-auto-installer.installFileTypeExtensionsForCurrentBuffer',
+      'extension-auto-installer.installLanguageExtensionsForCurrentBuffer',
       async () => {
-        const fileType = await workspace.nvim.eval('&filetype');
-        if (typeof fileType !== 'string') {
-          await window.showErrorMessage('Failed to get buffer file type.');
-          return;
-        }
-        await installFileTypeExtensions(getConfiguration(), fileType, true);
+        const languageId = (await workspace.document).textDocument.languageId;
+        await installLanguageExtensions(getConfiguration(), languageId, true);
       }
     ),
 
-    workspace.registerAutocmd({
-      event: 'FileType',
-      request: false,
-      arglist: ["expand('<amatch>')"],
-      callback: async (fileType: string) => {
-        await installFileTypeExtensions(getConfiguration(), fileType, false);
-      },
+    workspace.onDidOpenTextDocument(async (e) => {
+      await installLanguageExtensions(
+        getConfiguration(),
+        e.languageId,
+        false
+      );
     })
   );
 
@@ -40,7 +35,10 @@ export async function activate(context: ExtensionContext): Promise<void> {
   channel.appendLine(
     `Extension Manager Configuration: ${JSON.stringify(config, null, 2)}`
   );
-  await installGlobalExtensions(config, false);
+
+  if (config.autoCheckGlobalExtensions !== 'never') {
+    await installGlobalExtensions(config, false);
+  }
 }
 
 async function installGlobalExtensions(
@@ -48,12 +46,15 @@ async function installGlobalExtensions(
   showMessage: boolean
 ): Promise<void> {
   const wanted = [...config.globalExtensions, ...config.workspaceExtensions];
-  const res = await installExtensionsIfNotInstalled(wanted);
+  const res = await installExtensionsIfNotInstalled(
+    wanted,
+    config.autoCheckGlobalExtensions === 'autoInstall'
+  );
   switch (res) {
     case 'allInstalled':
       if (showMessage) {
         await window.showInformationMessage(
-          'All file type extensions are installed.'
+          'All language extensions are installed.'
         );
       }
       break;
@@ -63,25 +64,28 @@ async function installGlobalExtensions(
   }
 }
 
-async function installFileTypeExtensions(
+async function installLanguageExtensions(
   config: Configuration,
-  fileType: string,
+  languageId: string,
   showMessage: boolean
 ) {
-  const wanted = config.filetypeExtensions[fileType];
+  const wanted = config.languageExtensions[languageId];
   if (!wanted) {
     if (showMessage) {
-      window.showInformationMessage('No file type extensions found.');
+      window.showInformationMessage('No language extensions found.');
     }
     return;
   }
 
-  const res = await installExtensionsIfNotInstalled(wanted);
+  const res = await installExtensionsIfNotInstalled(
+    wanted,
+    config.autoCheckLanguageExtensions === 'autoInstall'
+  );
   switch (res) {
     case 'allInstalled':
       if (showMessage) {
         await window.showInformationMessage(
-          'All file type extensions are installed.'
+          'All language extensions are installed.'
         );
       }
       break;
@@ -92,7 +96,8 @@ async function installFileTypeExtensions(
 }
 
 async function installExtensionsIfNotInstalled(
-  wanted: string[]
+  wanted: string[],
+  autoInstall: boolean
 ): Promise<'success' | 'allInstalled' | 'cancelled' | 'noExtensionSelected'> {
   const installed: { [K: string]: boolean } = Object.assign(
     {},
@@ -117,13 +122,15 @@ async function installExtensionsIfNotInstalled(
     return 'allInstalled';
   }
 
-  const result = await window.showInformationMessage(
-    'There are extensions that are not installed. Install?\n' +
-      `[${toInstall.join(', ')}]`,
-    'Install',
-    'Select which extensions to install',
-    'Not now'
-  );
+  const result = autoInstall
+    ? 'Install'
+    : await window.showInformationMessage(
+        'There are extensions that are not installed. Install?\n' +
+          `[${toInstall.join(', ')}]`,
+        'Install',
+        'Select which extensions to install',
+        'Not now'
+      );
 
   if (!result || result === 'Not now') {
     return 'cancelled';
@@ -148,16 +155,26 @@ async function installExtensionsIfNotInstalled(
 }
 
 type Configuration = {
+  autoCheckGlobalExtensions: 'autoInstall' | 'confirm' | 'never';
+  autoCheckLanguageExtensions: 'autoInstall' | 'confirm' | 'never';
   globalExtensions: string[];
   workspaceExtensions: string[];
-  filetypeExtensions: Record<string, string[]>;
+  languageExtensions: Record<string, string[]>;
 };
 
 function getConfiguration(): Configuration {
   const config = workspace.getConfiguration('extension-auto-installer');
   return {
-    globalExtensions: config.get('globalExtensions') || [],
-    workspaceExtensions: config.get('workspaceExtensions') || [],
-    filetypeExtensions: config.get('filetypeExtensions') || {},
+    autoCheckGlobalExtensions: config.get(
+      'autoCheckGlobalExtensions',
+      'confirm'
+    ),
+    autoCheckLanguageExtensions: config.get(
+      'autoCheckLanguageExtensions',
+      'confirm'
+    ),
+    globalExtensions: config.get('globalExtensions', []),
+    workspaceExtensions: config.get('workspaceExtensions', []),
+    languageExtensions: config.get('languageExtensions', {}),
   };
 }
