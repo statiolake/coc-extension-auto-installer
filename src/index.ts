@@ -18,7 +18,12 @@ export async function activate(context: ExtensionContext): Promise<void> {
       'extension-auto-installer.installLanguageExtensionsForCurrentBuffer',
       async () => {
         const languageId = (await workspace.document).textDocument.languageId;
-        await installLanguageExtensions(getConfiguration(), languageId, true);
+        await installLanguageExtensions(
+          getConfiguration(),
+          languageId,
+          false,
+          true
+        );
       }
     ),
     commands.registerCommand(
@@ -26,11 +31,14 @@ export async function activate(context: ExtensionContext): Promise<void> {
       async () => await removeUnusedExtensions(getConfiguration(), true)
     ),
     workspace.onDidOpenTextDocument(async (e) => {
-      await installLanguageExtensions(
-        getConfiguration(),
-        e.languageId,
-        false
-      );
+      if (config.autoCheckLanguageExtensions !== 'never') {
+        await installLanguageExtensions(
+          getConfiguration(),
+          e.languageId,
+          config.autoCheckLanguageExtensions === 'autoInstall',
+          false
+        );
+      }
     })
   );
 
@@ -74,6 +82,7 @@ async function installGlobalExtensions(
 async function installLanguageExtensions(
   config: Configuration,
   languageId: string,
+  autoInstall: boolean,
   showMessage: boolean
 ) {
   const wanted = config.languageExtensions[languageId];
@@ -84,10 +93,7 @@ async function installLanguageExtensions(
     return;
   }
 
-  const res = await installExtensionsIfNotInstalled(
-    wanted,
-    config.autoCheckLanguageExtensions === 'autoInstall'
-  );
+  const res = await installExtensionsIfNotInstalled(wanted, autoInstall);
   switch (res) {
     case 'allInstalled':
       if (showMessage) {
