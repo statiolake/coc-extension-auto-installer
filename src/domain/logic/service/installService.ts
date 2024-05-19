@@ -17,12 +17,19 @@ export const findMissingExtensions = (
     })
     .filter((request) => {
       const languages = request.languages;
-      return (
-        (onlyForLanguage === undefined && languages.isGlobal) ||
-        (onlyForLanguage !== undefined &&
-          !languages.isGlobal &&
-          languages.names.includes(onlyForLanguage))
-      );
+
+      if (onlyForLanguage === undefined) {
+        // We are in the global extensions mode. Filter out non-global
+        // extensions.
+        return languages.isGlobal;
+      }
+
+      // Otherwise, we are in the language extensions mode.
+      if (languages.isGlobal) {
+        return false;
+      }
+
+      return languages.names.includes(onlyForLanguage);
     });
 };
 
