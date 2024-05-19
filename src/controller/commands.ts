@@ -11,7 +11,7 @@ export const installGlobalExtensions = async () => {
 
   const config = container.configLoader.load();
   const res = await container.installExtensionUsecase.handle({
-    autoExecution: neverToConfirm(config.autoGlobalInstall),
+    autoExecution: neverToConfirm(config.autoInstallGlobal),
   });
 
   switch (res.detail) {
@@ -37,7 +37,7 @@ export const installLanguageExtensions = async () => {
   const config = container.configLoader.load();
   const language = (await workspace.document).textDocument.languageId;
   const res = await container.installExtensionUsecase.handle({
-    autoExecution: neverToConfirm(config.autoLanguageInstall),
+    autoExecution: neverToConfirm(config.autoInstallLanguage),
     language: language,
   });
 

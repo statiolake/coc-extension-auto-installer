@@ -30,7 +30,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
     `Extension Manager Configuration: ${JSON.stringify(config, null, 2)}`
   );
   container.installExtensionUsecase.handle({
-    autoExecution: config.autoGlobalInstall,
+    autoExecution: config.autoInstallGlobal,
   });
   container.uninstallUnusedExtensionUsecase.handle({
     autoExecution: config.autoUninstallUnused,

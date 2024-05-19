@@ -12,7 +12,7 @@ export const onDidOpenTextDocument = async (e: LinesTextDocument) => {
   const container = createContainer({ silent: true });
   const config = container.configLoader.load();
   const res = await container.installExtensionUsecase.handle({
-    autoExecution: config.autoLanguageInstall,
+    autoExecution: config.autoInstallLanguage,
     language: e.languageId,
   });
 

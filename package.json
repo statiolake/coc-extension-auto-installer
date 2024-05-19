@@ -53,7 +53,7 @@
           "default": "never",
           "description": "Automatically remove unknown extensions on startup. Default is `false` because workspace extensions will always be removed when you open other workspaces."
         },
-        "extension-auto-installer.autoGlobalInstall": {
+        "extension-auto-installer.autoInstallGlobal": {
           "type": "string",
           "enum": [
             "auto",
@@ -63,7 +63,7 @@
           "default": "confirm",
           "description": "Check global extensions automatically on startup"
         },
-        "extension-auto-installer.autoLanguageInstall": {
+        "extension-auto-installer.autoInstallLanguage": {
           "type": "string",
           "enum": [
             "auto",
