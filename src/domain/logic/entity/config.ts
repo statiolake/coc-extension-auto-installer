@@ -7,9 +7,9 @@ export const AutoExecutionSchema = z.union([
 ]);
 
 export const ConfigSchema = z.object({
-  autoRemoveUnusedExtensions: AutoExecutionSchema.default('never'),
-  autoCheckGlobalExtensions: AutoExecutionSchema.default('confirm'),
-  autoCheckLanguageExtensions: AutoExecutionSchema.default('confirm'),
+  autoUninstallUnused: AutoExecutionSchema.default('never'),
+  autoGlobalInstall: AutoExecutionSchema.default('confirm'),
+  autoLanguageInstall: AutoExecutionSchema.default('confirm'),
   globalExtensions: z.array(z.string()).default([]),
   workspaceExtensions: z.array(z.string()).default([]),
   languageExtensions: z.record(z.array(z.string())).default({}),

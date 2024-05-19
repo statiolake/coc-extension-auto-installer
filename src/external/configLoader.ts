@@ -1,15 +1,20 @@
 import { workspace } from 'coc.nvim';
-import { Configuration, ConfigurationSchema } from '../domain/config';
+import { ConfigLoaderInterface } from '../domain/externalInterface/configLoaderInterface';
+import { ConfigSchema } from '../domain/logic/entity/config';
 
-export const getConfiguration = (): Configuration => {
-  const config = workspace.getConfiguration('extension-auto-installer');
+export const createConfigLoader = (): ConfigLoaderInterface => {
+  return {
+    load: () => {
+      const config = workspace.getConfiguration('extension-auto-installer');
 
-  return ConfigurationSchema.parse({
-    autoRemoveUnusedExtensions: config.get('autoRemoveUnusedExtensions'),
-    autoCheckGlobalExtensions: config.get('autoCheckGlobalExtensions'),
-    autoCheckLanguageExtensions: config.get('autoCheckLanguageExtensions'),
-    globalExtensions: config.get('globalExtensions'),
-    workspaceExtensions: config.get('workspaceExtensions'),
-    languageExtensions: config.get('languageExtensions'),
-  });
+      return ConfigSchema.parse({
+        autoUninstallUnused: config.get('autoUninstallUnused'),
+        autoInstallGlobal: config.get('autoInstallGlobal'),
+        autoInstallLanguage: config.get('autoInstallLanguage'),
+        globalExtensions: config.get('globalExtensions'),
+        workspaceExtensions: config.get('workspaceExtensions'),
+        languageExtensions: config.get('languageExtensions'),
+      });
+    },
+  };
 };

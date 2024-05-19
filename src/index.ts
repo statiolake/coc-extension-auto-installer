@@ -1,9 +1,16 @@
 import { commands, ExtensionContext, window, workspace } from 'coc.nvim';
-import * as cmd from './commands';
+import { ServiceContainer } from './domain/externalInterface/container';
+import { createConfigLoader } from './external/configLoader';
+import { createUserPrompt } from './external/userPrompt';
 
 const channel = window.createOutputChannel('extension-auto-installer');
 
 export async function activate(context: ExtensionContext): Promise<void> {
+  const container: ServiceContainer = {
+    configLoader: createConfigLoader(),
+    userPrompt: createUserPrompt(),
+  };
+
   context.subscriptions.push(
     commands.registerCommand(
       'extension-auto-installer.installGlobalExtensions',
