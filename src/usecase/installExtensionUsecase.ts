@@ -6,20 +6,19 @@ import {
   selectTargets,
 } from '../domain/logic/service/installService';
 import { populateRequestedExtensions } from '../domain/logic/service/populateRequestedExtensionService';
-import { InstallGlobalExtensionsInteractor } from '../domain/usecaseInterface/installGlobalExtensionsUsecase';
+import { InstallExtensionsInteractor } from '../domain/usecaseInterface/installExtensionsUsecase';
 
-export type InstallGlobalExtensionsUsecase =
-  InstallGlobalExtensionsInteractor;
+export type InstallExtensionsUsecase = InstallExtensionsInteractor;
 
 export const create = (
   container: ServiceContainer
-): InstallGlobalExtensionsUsecase => {
+): InstallExtensionsUsecase => {
   return {
-    handle: async () => {
+    handle: async (request) => {
       const config = container.configLoader.load();
       const requested = populateRequestedExtensions(config);
       const installed = getInstalledExtensions();
-      const targets = selectTargets(requested, installed);
+      const targets = selectTargets(requested, installed, request.language);
       if (targets.length === 0) {
         return {
           detail: 'alreadyInstalled',
@@ -27,7 +26,7 @@ export const create = (
       }
 
       const selection = await askUserForTargets(
-        config.autoCheckGlobalExtensions,
+        request.autoExecution,
         container.userPrompt,
         targets
       );
