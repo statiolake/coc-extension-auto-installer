@@ -2,31 +2,28 @@ import { ServiceContainer } from '../domain/externalInterface/container';
 import { AutoExecution } from '../domain/logic/entity/config';
 import { Extension } from '../domain/logic/entity/extension';
 import {
-  findMissingExtensions,
+  findUnusedExtensions,
   getInstalledExtensions,
-  installExtensions,
+  uninstallExtensions,
 } from '../domain/logic/service/installService';
 import { populateRequestedExtensions } from '../domain/logic/service/populateRequestedExtensionService';
-import { InstallExtensionsInteractor } from '../domain/usecaseInterface/installExtensionsUsecase';
+import { UninstallUnusedExtensionsInteractor } from '../domain/usecaseInterface/uninstallUnusedExtensionsUsecase';
 
-export type InstallExtensionsUsecase = InstallExtensionsInteractor;
+export type UninstallUnusedExtensionsUsecase =
+  UninstallUnusedExtensionsInteractor;
 
 export const create = (
   container: ServiceContainer
-): InstallExtensionsUsecase => {
+): UninstallUnusedExtensionsUsecase => {
   return {
     handle: async (request) => {
       const config = container.configLoader.load();
       const requested = populateRequestedExtensions(config);
       const installed = getInstalledExtensions();
-      const targets = findMissingExtensions(
-        requested,
-        installed,
-        request.language
-      );
+      const targets = findUnusedExtensions(requested, installed);
       if (targets.length === 0) {
         return {
-          detail: 'alreadyInstalled',
+          detail: 'nothingFound',
         };
       }
 
@@ -42,7 +39,7 @@ export const create = (
         };
       }
 
-      await installExtensions(selection);
+      await uninstallExtensions(selection);
 
       return {
         detail: 'success',
@@ -70,12 +67,12 @@ const askUser = async (
 
   const option = await container.userPrompt.prompt(
     [
-      'There are extensions that are not installed. Install?',
+      'There are extensions that are not used anymore. Uninstall?',
       targets.map((extension) => extension.id).join(', '),
     ].join('\n'),
     [
-      { id: 'install', label: 'Install' },
-      { id: 'select', label: 'Select which extensions to install' },
+      { id: 'uninstall', label: 'Uninstall' },
+      { id: 'select', label: 'Select which extensions to uninstall' },
       { id: 'notNow', label: 'Not now' },
     ]
   );
@@ -84,12 +81,12 @@ const askUser = async (
     return [];
   }
 
-  if (option.id === 'install') {
+  if (option.id === 'uninstall') {
     return targets;
   }
 
   const selected = await container.userPrompt.promptMany(
-    'Select extensions to install',
+    'Select extensions to uninstall',
     targets.map((extension) => ({
       id: extension.id,
       label: extension.id,
