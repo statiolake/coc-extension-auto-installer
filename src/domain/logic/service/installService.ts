@@ -46,7 +46,9 @@ export const installExtensions = async (
   targets: Extension[]
 ): Promise<void> => {
   // installExtensions is not in type definitions but exists
-  await (extensions as any).installExtensions(targets.map((e) => e.id));
+  return await (extensions as any).installExtensions(
+    targets.map((e) => e.id)
+  );
 };
 
 export const uninstallExtensions = async (

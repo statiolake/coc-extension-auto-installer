@@ -1,3 +1,4 @@
+import { Mutex } from 'coc.nvim';
 import { ConfigLoaderInterface } from '../domain/externalInterface/configLoaderInterface';
 import { UserPromptInterface } from '../domain/externalInterface/userPromptInterface';
 import { AutoExecution } from '../domain/logic/entity/config';
@@ -13,42 +14,46 @@ import { InstallExtensionsInteractor } from '../domain/usecaseInterface/installE
 export type InstallExtensionsUsecase = InstallExtensionsInteractor;
 
 export const createInstallExtensionsUsecase = (
+  installerMutex: Mutex,
   configLoader: ConfigLoaderInterface,
   userPrompt: UserPromptInterface
 ): InstallExtensionsUsecase => {
   return {
     handle: async (request) => {
-      const config = configLoader.load();
-      const requested = populateRequestedExtensions(config);
-      const installed = getInstalledExtensions();
-      const targets = findMissingExtensions(
-        requested,
-        installed,
-        request.language
-      );
-      if (targets.length === 0) {
+      // Keep the max concurrent installers to 1
+      return await installerMutex.use(async () => {
+        const config = configLoader.load();
+        const requested = populateRequestedExtensions(config);
+        const installed = getInstalledExtensions();
+        const targets = findMissingExtensions(
+          requested,
+          installed,
+          request.language
+        );
+        if (targets.length === 0) {
+          return {
+            detail: 'alreadyInstalled',
+          };
+        }
+
+        const selection = await askUser(
+          userPrompt,
+          request.autoExecution,
+          targets
+        );
+
+        if (selection.length === 0) {
+          return {
+            detail: 'cancelled',
+          };
+        }
+
+        await installExtensions(selection);
+
         return {
-          detail: 'alreadyInstalled',
+          detail: 'success',
         };
-      }
-
-      const selection = await askUser(
-        userPrompt,
-        request.autoExecution,
-        targets
-      );
-
-      if (selection.length === 0) {
-        return {
-          detail: 'cancelled',
-        };
-      }
-
-      await installExtensions(selection);
-
-      return {
-        detail: 'success',
-      };
+      });
     },
   };
 };

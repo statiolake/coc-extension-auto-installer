@@ -4,6 +4,11 @@ import { AutoExecution } from '../domain/logic/entity/config';
 
 export const installGlobalExtensions = async () => {
   const container = createContainer({ silent: false });
+  if (container.installerMutex.busy) {
+    container.userPrompt.show('Another installer is already running');
+    return;
+  }
+
   const config = container.configLoader.load();
   const res = await container.installExtensionUsecase.handle({
     autoExecution: neverToConfirm(config.autoGlobalInstall),
@@ -24,6 +29,11 @@ export const installGlobalExtensions = async () => {
 
 export const installLanguageExtensions = async () => {
   const container = createContainer({ silent: false });
+  if (container.installerMutex.busy) {
+    container.userPrompt.show('Another installer is already running');
+    return;
+  }
+
   const config = container.configLoader.load();
   const language = (await workspace.document).textDocument.languageId;
   const res = await container.installExtensionUsecase.handle({

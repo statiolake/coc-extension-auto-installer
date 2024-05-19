@@ -1,4 +1,4 @@
-import { commands, ExtensionContext, window, workspace } from 'coc.nvim';
+import { commands, ExtensionContext, workspace } from 'coc.nvim';
 import { createContainer } from './containerFactory';
 import {
   installGlobalExtensions,
@@ -6,8 +6,6 @@ import {
   uninstallUnusedExtensions,
 } from './controller/commands';
 import { onDidOpenTextDocument } from './controller/events';
-
-const channel = window.createOutputChannel('extension-auto-installer');
 
 export async function activate(context: ExtensionContext): Promise<void> {
   context.subscriptions.push(
@@ -28,7 +26,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
   const container = createContainer({ silent: true });
   const config = container.configLoader.load();
-  channel.appendLine(
+  container.channel.appendLine(
     `Extension Manager Configuration: ${JSON.stringify(config, null, 2)}`
   );
   container.installExtensionUsecase.handle({
