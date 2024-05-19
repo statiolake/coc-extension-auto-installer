@@ -36,15 +36,15 @@ export const findUnusedExtensions = (
 };
 
 export const installExtensions = async (
-  extensions: Extension[]
+  targets: Extension[]
 ): Promise<void> => {
   // installExtensions is not in type definitions but exists
-  await (extensions as any).installExtensions(extensions);
+  await (extensions as any).installExtensions(targets.map((e) => e.id));
 };
 
 export const uninstallExtensions = async (
-  extensions: Extension[]
+  targets: Extension[]
 ): Promise<void> => {
   // uninstallExtensions is not in type definitions but exists
-  (extensions as any).manager.uninstallExtensions(extensions);
+  (extensions as any).manager.uninstallExtensions(targets.map((e) => e.id));
 };

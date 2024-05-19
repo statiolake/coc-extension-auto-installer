@@ -11,9 +11,9 @@ export const createUserPrompt = (opts: {
       }
     },
     prompt: async (message, options) => {
-      const selected = await window.showQuickPick(
-        options.map((option) => option.label),
-        { title: message }
+      const selected = await window.showInformationMessage(
+        message,
+        ...options.map((option) => option.label)
       );
 
       if (!selected) return undefined;
