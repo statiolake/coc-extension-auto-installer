@@ -110,5 +110,8 @@
         "title": "coc-extension-auto-installer command title"
       }
     ]
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
   }
 }

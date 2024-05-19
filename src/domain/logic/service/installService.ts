@@ -1,0 +1,183 @@
+import { extensions, window } from 'coc.nvim';
+import { Extension, RequestedExtension } from '../entity/extension';
+
+export async function installGlobalExtensions(
+  config: Configuration,
+  showMessage: boolean
+): Promise<void> {
+  const wanted = [...config.globalExtensions, ...config.workspaceExtensions];
+  const res = await installExtensionsIfNotInstalled(
+    wanted,
+    config.autoCheckGlobalExtensions === 'autoInstall'
+  );
+  switch (res) {
+    case 'allInstalled':
+      if (showMessage) {
+        await window.showInformationMessage(
+          'All language extensions are installed.'
+        );
+      }
+      break;
+    case 'noExtensionSelected':
+      await window.showInformationMessage('No extensions are selected.');
+      break;
+  }
+}
+
+export async function installLanguageExtensions(
+  config: Configuration,
+  languageId: string,
+  autoInstall: boolean,
+  showMessage: boolean
+) {
+  const wanted = config.languageExtensions[languageId];
+  if (!wanted) {
+    if (showMessage) {
+      window.showInformationMessage('No language extensions found.');
+    }
+    return;
+  }
+
+  const res = await installExtensionsIfNotInstalled(wanted, autoInstall);
+  switch (res) {
+    case 'allInstalled':
+      if (showMessage) {
+        await window.showInformationMessage(
+          'All language extensions are installed.'
+        );
+      }
+      break;
+    case 'noExtensionSelected':
+      await window.showInformationMessage('No extensions are selected.');
+      break;
+  }
+}
+
+async function installExtensionsIfNotInstalled(
+  wanted: string[],
+  autoInstall: boolean
+): Promise<'success' | 'allInstalled' | 'cancelled' | 'noExtensionSelected'> {
+  const installed = new Set(getInstalledExtensions());
+  let toInstall: string[] = [];
+  for (const extension of wanted) {
+    if (!installed.has(extension)) {
+      toInstall.push(extension);
+    }
+  }
+
+  channel.appendLine(`wanted extensions: [${wanted.join(', ')}]`);
+  channel.appendLine(`installed extensions: [${[...installed].join(', ')}]`);
+  channel.appendLine(`toInstall extensions: [${toInstall.join(', ')}]`);
+
+  // If there is no extensions, nothing to install.
+  if (toInstall.length === 0) {
+    return 'allInstalled';
+  }
+
+  const result = autoInstall
+    ? 'Install'
+    : await window.showInformationMessage(
+        'There are extensions that are not installed. Install?\n' +
+          `[${toInstall.join(', ')}]`,
+        'Install',
+        'Select which extensions to install',
+        'Not now'
+      );
+
+  if (!result || result === 'Not now') {
+    return 'cancelled';
+  }
+
+  if (result === 'Select which extensions to install') {
+    toInstall =
+      (await window.showQuickPick(toInstall, {
+        title: 'Select extensions to install',
+        canPickMany: true,
+      })) || [];
+    if (toInstall.length === 0) {
+      return 'noExtensionSelected';
+    }
+  }
+
+  // Install extension now
+  // installExtensions is not in type definitions but exists
+  await (extensions as any).installExtensions(toInstall);
+
+  return 'success';
+}
+
+async function removeUnusedExtensions(
+  config: Configuration,
+  showMessage: boolean
+): Promise<void> {
+  const installed = getInstalledExtensions().filter(
+    (id) => !(extensions as any).manager.getExtension(id).isLocal
+  );
+  const specified = new Set([
+    ...config.globalExtensions,
+    ...config.workspaceExtensions,
+    ...([] as string[]).concat(...Object.values(config.languageExtensions)),
+  ]);
+
+  let toRemove = installed.filter(
+    (extensionId) => !specified.has(extensionId)
+  );
+  if (toRemove.length === 0) {
+    if (showMessage) {
+      await window.showInformationMessage('No unused extensions found');
+    }
+    return;
+  } else {
+    const autoRemove = config.autoRemoveUnusedExtensions === 'autoRemove';
+    const result = autoRemove
+      ? 'Remove'
+      : await window.showInformationMessage(
+          'There are extensions that are not used anymore. Remove?\n' +
+            `[${toRemove.join(', ')}]`,
+          'Remove',
+          'Select which extensions to remove',
+          'Not now'
+        );
+
+    if (!result || result === 'Not now') return;
+
+    if (result === 'Select which extensions to remove') {
+      toRemove =
+        (await window.showQuickPick(toRemove, {
+          title: 'Select extensions to remove',
+          canPickMany: true,
+        })) || [];
+      if (toRemove.length === 0) {
+        return;
+      }
+    }
+
+    // uninstallExtensions is not in type definitions but exists
+    (extensions as any).manager.uninstallExtensions(toRemove);
+  }
+}
+
+export const selectTargets = (
+  requests: RequestedExtension[],
+  installed: Extension[],
+  onlyForLanguage?: string
+): Extension[] => {
+  return requests
+    .filter((request) => {
+      // Only select non-installed extensions
+      return installed.every((extension) => extension.id !== request.id);
+    })
+    .filter((request) => {
+      const languages = request.languages;
+      return (
+        (onlyForLanguage === undefined && languages.isGlobal) ||
+        (onlyForLanguage !== undefined &&
+          !languages.isGlobal &&
+          languages.names.includes(onlyForLanguage))
+      );
+    });
+};
+
+export const getInstalledExtensions = (): Extension[] => {
+  return extensions.all.map((api) => ({ id: api.id }));
+};
