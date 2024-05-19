@@ -1,7 +1,9 @@
-import { Config } from './config';
-import { RequestedExtension } from './extension';
+import { Config } from '../entity/config';
+import { RequestedExtension } from '../entity/extension';
 
-export const populate = (config: Config): RequestedExtension[] => {
+export const populateRequestedExtensions = (
+  config: Config
+): RequestedExtension[] => {
   const globalExtensions = [
     ...config.globalExtensions,
     ...config.workspaceExtensions,

@@ -4,6 +4,10 @@ export type Option = {
 };
 
 export type UserPromptInterface = {
-  show: (message: string) => void;
-  prompt: (message: string, options: Option[]) => Option;
+  show: (message: string) => Promise<void>;
+  prompt: (message: string, options: Option[]) => Promise<Option | undefined>;
+  promptMany: (
+    message: string,
+    options: Option[]
+  ) => Promise<Option[] | undefined>;
 };

@@ -1,28 +1,7 @@
 import { extensions, window } from 'coc.nvim';
+import { UserPromptInterface } from '../../externalInterface/userPromptInterface';
+import { AutoExecution } from '../entity/config';
 import { Extension, RequestedExtension } from '../entity/extension';
-
-export async function installGlobalExtensions(
-  config: Configuration,
-  showMessage: boolean
-): Promise<void> {
-  const wanted = [...config.globalExtensions, ...config.workspaceExtensions];
-  const res = await installExtensionsIfNotInstalled(
-    wanted,
-    config.autoCheckGlobalExtensions === 'autoInstall'
-  );
-  switch (res) {
-    case 'allInstalled':
-      if (showMessage) {
-        await window.showInformationMessage(
-          'All language extensions are installed.'
-        );
-      }
-      break;
-    case 'noExtensionSelected':
-      await window.showInformationMessage('No extensions are selected.');
-      break;
-  }
-}
 
 export async function installLanguageExtensions(
   config: Configuration,
@@ -157,6 +136,10 @@ async function removeUnusedExtensions(
   }
 }
 
+export const getInstalledExtensions = (): Extension[] => {
+  return extensions.all.map((api) => ({ id: api.id }));
+};
+
 export const selectTargets = (
   requests: RequestedExtension[],
   installed: Extension[],
@@ -178,6 +161,65 @@ export const selectTargets = (
     });
 };
 
-export const getInstalledExtensions = (): Extension[] => {
-  return extensions.all.map((api) => ({ id: api.id }));
+export const askUserForTargets = async (
+  autoExecution: AutoExecution,
+  userPrompt: UserPromptInterface,
+  targets: Extension[]
+): Promise<Extension[]> => {
+  if (targets.length === 0) {
+    return [];
+  }
+
+  if (autoExecution === 'never') {
+    return [];
+  }
+
+  if (autoExecution === 'auto') {
+    return targets;
+  }
+
+  const option = await userPrompt.prompt(
+    [
+      'There are extensions that are not installed. Install?',
+      targets.map((extension) => extension.id).join(', '),
+    ].join('\n'),
+    [
+      { id: 'install', label: 'Install' },
+      { id: 'select', label: 'Select which extensions to install' },
+      { id: 'notNow', label: 'Not now' },
+    ]
+  );
+
+  if (!option || option.id === 'notNow') {
+    return [];
+  }
+
+  if (option.id === 'install') {
+    return targets;
+  }
+
+  const selected = await userPrompt.promptMany(
+    'Select extensions to install',
+    targets.map((extension) => ({ id: extension.id, label: extension.id }))
+  );
+
+  if (!selected) {
+    return [];
+  }
+
+  return selected.map((selected) => ({ id: selected.id }));
+};
+
+export const installExtensions = async (
+  extensions: Extension[]
+): Promise<void> => {
+  // installExtensions is not in type definitions but exists
+  await (extensions as any).installExtensions(extensions);
+};
+
+export const uninstallExtensions = async (
+  extensions: Extension[]
+): Promise<void> => {
+  // uninstallExtensions is not in type definitions but exists
+  (extensions as any).manager.uninstallExtensions(extensions);
 };

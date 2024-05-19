@@ -1,4 +1,4 @@
-import { Config } from '../logic/config';
+import { Config } from '../logic/entity/config';
 
 export type ConfigLoaderInterface = {
   load: () => Config;
