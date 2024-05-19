@@ -1,59 +1,40 @@
 import { commands, ExtensionContext, window, workspace } from 'coc.nvim';
-import { ServiceContainer } from './domain/externalInterface/container';
-import { createConfigLoader } from './external/configLoader';
-import { createUserPrompt } from './external/userPrompt';
+import { createContainer } from './containerFactory';
+import {
+  installGlobalExtensions,
+  installLanguageExtensions,
+  uninstallUnusedExtensions,
+} from './controller/commands';
+import { onDidOpenTextDocument } from './controller/events';
 
 const channel = window.createOutputChannel('extension-auto-installer');
 
 export async function activate(context: ExtensionContext): Promise<void> {
-  const container: ServiceContainer = {
-    configLoader: createConfigLoader(),
-    userPrompt: createUserPrompt(),
-  };
-
   context.subscriptions.push(
     commands.registerCommand(
       'extension-auto-installer.installGlobalExtensions',
-      cmd.installGlobalExtensions
+      installGlobalExtensions
     ),
     commands.registerCommand(
-      'extension-auto-installer.installLanguageExtensionsForCurrentBuffer',
-      async () => {
-        const languageId = (await workspace.document).textDocument.languageId;
-        await installLanguageExtensions(
-          getConfiguration(),
-          languageId,
-          false,
-          true
-        );
-      }
+      'extension-auto-installer.installLanguageExtensions',
+      installLanguageExtensions
     ),
     commands.registerCommand(
-      'extension-auto-installer.removeUnusedExtensions',
-      async () => await removeUnusedExtensions(getConfiguration(), true)
+      'extension-auto-installer.uninstallUnusedExtensions',
+      uninstallUnusedExtensions
     ),
-    workspace.onDidOpenTextDocument(async (e) => {
-      if (config.autoCheckLanguageExtensions !== 'never') {
-        await installLanguageExtensions(
-          getConfiguration(),
-          e.languageId,
-          config.autoCheckLanguageExtensions === 'autoInstall',
-          false
-        );
-      }
-    })
+    workspace.onDidOpenTextDocument(onDidOpenTextDocument)
   );
 
-  const config = getConfiguration();
+  const container = createContainer({ silent: true });
+  const config = container.configLoader.load();
   channel.appendLine(
     `Extension Manager Configuration: ${JSON.stringify(config, null, 2)}`
   );
-
-  if (config.autoCheckGlobalExtensions !== 'never') {
-    await installGlobalExtensions(config, false);
-  }
-
-  if (config.autoRemoveUnusedExtensions !== 'never') {
-    await removeUnusedExtensions(config, false);
-  }
+  container.installExtensionUsecase.handle({
+    autoExecution: config.autoGlobalInstall,
+  });
+  container.uninstallUnusedExtensionUsecase.handle({
+    autoExecution: config.autoUninstallUnused,
+  });
 }

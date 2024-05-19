@@ -2,7 +2,7 @@ import { AutoExecution } from '../logic/entity/config';
 
 export type InstallExtensionsRequest = {
   autoExecution: AutoExecution;
-  language: string | undefined;
+  language?: string;
 };
 
 export type InstallExtensionsResponse = {

@@ -1,10 +1,14 @@
 import { window } from 'coc.nvim';
 import { UserPromptInterface } from '../domain/externalInterface/userPromptInterface';
 
-export const createUserPrompt = (): UserPromptInterface => {
+export const createUserPrompt = (opts: {
+  silent?: boolean;
+}): UserPromptInterface => {
   return {
     show: async (message) => {
-      window.showInformationMessage(message);
+      if (!opts.silent) {
+        window.showInformationMessage(message);
+      }
     },
     prompt: async (message, options) => {
       const selected = await window.showQuickPick(

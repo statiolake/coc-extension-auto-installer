@@ -1,4 +1,5 @@
-import { ServiceContainer } from '../domain/externalInterface/container';
+import { ConfigLoaderInterface } from '../domain/externalInterface/configLoaderInterface';
+import { UserPromptInterface } from '../domain/externalInterface/userPromptInterface';
 import { AutoExecution } from '../domain/logic/entity/config';
 import { Extension } from '../domain/logic/entity/extension';
 import {
@@ -12,12 +13,13 @@ import { UninstallUnusedExtensionsInteractor } from '../domain/usecaseInterface/
 export type UninstallUnusedExtensionsUsecase =
   UninstallUnusedExtensionsInteractor;
 
-export const create = (
-  container: ServiceContainer
+export const createUninstallUnusedExtensionsUsecase = (
+  configLoader: ConfigLoaderInterface,
+  userPrompt: UserPromptInterface
 ): UninstallUnusedExtensionsUsecase => {
   return {
     handle: async (request) => {
-      const config = container.configLoader.load();
+      const config = configLoader.load();
       const requested = populateRequestedExtensions(config);
       const installed = getInstalledExtensions();
       const targets = findUnusedExtensions(requested, installed);
@@ -28,7 +30,7 @@ export const create = (
       }
 
       const selection = await askUser(
-        container,
+        userPrompt,
         request.autoExecution,
         targets
       );
@@ -49,7 +51,7 @@ export const create = (
 };
 
 const askUser = async (
-  container: ServiceContainer,
+  userPrompt: UserPromptInterface,
   autoExecution: AutoExecution,
   targets: Extension[]
 ): Promise<Extension[]> => {
@@ -65,7 +67,7 @@ const askUser = async (
     return targets;
   }
 
-  const option = await container.userPrompt.prompt(
+  const option = await userPrompt.prompt(
     [
       'There are extensions that are not used anymore. Uninstall?',
       targets.map((extension) => extension.id).join(', '),
@@ -85,7 +87,7 @@ const askUser = async (
     return targets;
   }
 
-  const selected = await container.userPrompt.promptMany(
+  const selected = await userPrompt.promptMany(
     'Select extensions to uninstall',
     targets.map((extension) => ({
       id: extension.id,
