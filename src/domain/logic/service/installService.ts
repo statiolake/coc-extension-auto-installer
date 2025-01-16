@@ -32,7 +32,9 @@ export const findUnusedExtensions = (
   requests: RequestedExtension[],
   installed: Extension[]
 ): Extension[] => {
-  return installed.filter((extension) => {
-    return requests.every((request) => request.id !== extension.id);
-  });
+  return installed
+    .filter((extension) => !extension.isRuntimePathPlugin)
+    .filter((extension) => {
+      return requests.every((request) => request.id !== extension.id);
+    });
 };
