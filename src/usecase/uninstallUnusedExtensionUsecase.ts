@@ -1,12 +1,9 @@
 import { ConfigLoaderInterface } from '../domain/externalInterface/configLoaderInterface';
+import { ExtensionClientInterface } from '../domain/externalInterface/extensionClientInterface';
 import { UserPromptInterface } from '../domain/externalInterface/userPromptInterface';
 import { AutoExecution } from '../domain/logic/entity/config';
 import { Extension } from '../domain/logic/entity/extension';
-import {
-  findUnusedExtensions,
-  getInstalledExtensions,
-  uninstallExtensions,
-} from '../domain/logic/service/installService';
+import { findUnusedExtensions } from '../domain/logic/service/installService';
 import { populateRequestedExtensions } from '../domain/logic/service/populateRequestedExtensionService';
 import { UninstallUnusedExtensionsInteractor } from '../domain/usecaseInterface/uninstallUnusedExtensionsUsecase';
 
@@ -14,6 +11,7 @@ export type UninstallUnusedExtensionsUsecase =
   UninstallUnusedExtensionsInteractor;
 
 export const createUninstallUnusedExtensionsUsecase = (
+  extensionClient: ExtensionClientInterface,
   configLoader: ConfigLoaderInterface,
   userPrompt: UserPromptInterface
 ): UninstallUnusedExtensionsUsecase => {
@@ -21,7 +19,7 @@ export const createUninstallUnusedExtensionsUsecase = (
     handle: async (request) => {
       const config = configLoader.load();
       const requested = populateRequestedExtensions(config);
-      const installed = getInstalledExtensions();
+      const installed = extensionClient.getInstalledExtensions();
       const targets = findUnusedExtensions(requested, installed);
       if (targets.length === 0) {
         return {
@@ -41,7 +39,7 @@ export const createUninstallUnusedExtensionsUsecase = (
         };
       }
 
-      await uninstallExtensions(selection);
+      await extensionClient.uninstallExtensions(selection);
 
       return {
         detail: 'success',
