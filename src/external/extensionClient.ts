@@ -10,7 +10,9 @@ export const createExtensionClient = (): ExtensionClientInterface => {
       return extensions.all.map((api) => {
         return {
           id: api.id,
-          isRuntimePathPlugin: !api.extensionPath.includes('coc/extensions'),
+          isRuntimePathPlugin:
+            !api.extensionPath.includes('coc/extensions') &&
+            !api.extensionPath.includes('coc\\extensions'),
         } as unknown as Extension;
       });
     },
