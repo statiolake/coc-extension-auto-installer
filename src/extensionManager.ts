@@ -1,11 +1,11 @@
-import { extensions, Mutex, window } from 'coc.nvim';
+import { extensions, Mutex, window, workspace } from 'coc.nvim';
 import { loadConfig } from './config';
 import {
+  ActionResult,
   AutoExecution,
   Config,
   Extension,
   ExtensionRequest,
-  ActionResult,
 } from './types';
 
 export class ExtensionManager {
@@ -28,26 +28,87 @@ export class ExtensionManager {
 
   // Install extensions with mutex protection
   async installExtensions(targets: Extension[]): Promise<void> {
-    return await this.mutex.use(
-      async () =>
-        await (extensions as any).installExtensions(targets.map((e) => e.id))
-    );
+    return await this.mutex.use(async () => {
+      // Re-check installed extensions inside mutex to avoid race conditions
+      const currentlyInstalled = this.getInstalledExtensions();
+      const stillNeedInstall = targets.filter((target) =>
+        currentlyInstalled.every((installed) => installed.id !== target.id)
+      );
+
+      if (stillNeedInstall.length === 0) {
+        return; // Nothing to install anymore
+      }
+
+      await (extensions as any).installExtensions(
+        stillNeedInstall.map((e) => e.id)
+      );
+
+      // Wait a bit to show results to the user
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await this.closeUI();
+    });
   }
 
   // Uninstall extensions with mutex protection
   async uninstallExtensions(targets: Extension[]): Promise<void> {
-    return await this.mutex.use(
-      async () =>
-        await (extensions as any).manager.uninstallExtensions(
-          targets.map((e) => e.id)
-        )
-    );
+    return await this.mutex.use(async () => {
+      // Re-check installed extensions inside mutex to avoid race conditions
+      const currentlyInstalled = this.getInstalledExtensions();
+      const stillNeedUninstall = targets.filter((target) =>
+        currentlyInstalled.some((installed) => installed.id === target.id)
+      );
+
+      if (stillNeedUninstall.length === 0) {
+        return; // Nothing to uninstall anymore
+      }
+
+      await (extensions as any).manager.uninstallExtensions(
+        stillNeedUninstall.map((e) => e.id)
+      );
+    });
   }
 
   // Show user notification
   private async showMessage(message: string): Promise<void> {
     if (!this.silent) {
       window.showInformationMessage(message);
+    }
+  }
+
+  private async closeUI(): Promise<void> {
+    // Close Installation Window
+    const nvim = workspace.nvim;
+    const winIds = await nvim.call('nvim_list_wins');
+    for (const winId of winIds) {
+      try {
+        const bufId = await nvim.call('nvim_win_get_buf', [winId]);
+        const lines = await nvim.call('nvim_buf_get_lines', [
+          bufId,
+          0,
+          1,
+          false,
+        ]);
+
+        // Check if the buffer contains the installation message
+        if (lines.length === 0 || !lines[0].trim().startsWith('Install')) {
+          continue;
+        }
+
+        // Check if the buffer has a mapping for quitting
+        const mappings = await nvim.call('nvim_buf_get_keymap', [bufId, 'n']);
+        const hasQuitMapping = mappings.some(
+          (mapping: any) => mapping.lhs === 'q' && mapping.rhs.includes(':q')
+        );
+
+        if (!hasQuitMapping) {
+          continue;
+        }
+
+        // Maybe it's the installer UI
+        await nvim.call('nvim_win_close', [winId, true]);
+      } catch (error) {
+        continue;
+      }
     }
   }
 
