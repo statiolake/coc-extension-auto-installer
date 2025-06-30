@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// Configuration types
 export const AutoExecutionSchema = z.union([
   z.literal('auto'),
   z.literal('confirm'),
@@ -17,3 +18,17 @@ export const ConfigSchema = z.object({
 
 export type AutoExecution = z.infer<typeof AutoExecutionSchema>;
 export type Config = z.infer<typeof ConfigSchema>;
+
+// Extension types
+export type Extension = {
+  id: string;
+  isRuntimePathPlugin: boolean;
+};
+
+export type ExtensionRequest = {
+  id: string;
+  scope: 'global' | string[];
+};
+
+// Action result types
+export type ActionResult = 'success' | 'alreadyInstalled' | 'cancelled';

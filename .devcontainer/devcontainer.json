@@ -1,0 +1,14 @@
+{
+    "name": "Development Container",
+    "dockerComposeFile": "compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspace",
+    "remoteUser": "node",
+    // "forwardPorts": [3000, 8080],
+    "postCreateCommand": "npm install --legacy-peer-deps",
+    "customizations": {
+        "vscode": {
+            "extensions": []
+        }
+    }
+}
