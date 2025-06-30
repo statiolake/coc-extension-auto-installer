@@ -29,6 +29,9 @@ export class ExtensionManager {
   // Install extensions with mutex protection
   async installExtensions(targets: Extension[]): Promise<void> {
     return await this.mutex.use(async () => {
+      // Close any existing installation UI
+      await this.closeUI();
+
       // Re-check installed extensions inside mutex to avoid race conditions
       const currentlyInstalled = this.getInstalledExtensions();
       const stillNeedInstall = targets.filter((target) =>
